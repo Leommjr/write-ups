@@ -1,0 +1,107 @@
+Extract the apk:
+  $ adb shell pm list packages |grep diva
+  $ adb shell pm path jakhar.aseem.diva
+  $ adb pull /path/to/diva/base.apk
+  
+Open apk in jadx-gui (static analysis)
+
+## 1. Insecure Logging
+Solution: 
+  $ adb -e logcat jakhar.aseem.diva
+
+## 2. Hardcoding Issues - Part 1
+Solution:
+  In the file jakhar.aseem.diva.HardcodeActivity:
+  `if (((EditText) findViewById(C0319R.C0321id.hcKey)).getText().toString().equals("vendorsecretkey"))`
+   The user input key is compare to the string "vendorsecretkey", which is the correct key
+  Just enter "vendorsecretkey".
+  
+## 3. Insecure Data Storage - Part 1
+Solution:
+   In the file jakhar.aseem.diva.InsecureDataStorage1Activity:
+   `public void saveCredentials(View view) {
+        SharedPreferences.Editor spedit = PreferenceManager.getDefaultSharedPreferences(this).edit();
+        spedit.putString("user", ((EditText) findViewById(C0319R.C0321id.ids1Usr)).getText().toString());
+        spedit.putString("password", ((EditText) findViewById(C0319R.C0321id.ids1Pwd)).getText().toString());
+        spedit.commit();
+        Toast.makeText(this, "3rd party credentials saved successfully!", 0).show();
+    }`
+    you can see the use of "SharedPreferences".
+    $ adb shell cat /data/data/jakhar.aseem.diva/shared_prefs/jakhar.aseem.diva_preferences.xml
+
+## 4. Insecure Data Storage - Part 2
+Solution:
+   In the file jakhar.aseem.diva.InsecureDataStorage2Activity:
+   `this.mDB = openOrCreateDatabase("ids2", 0, null);
+    this.mDB.execSQL("CREATE TABLE IF NOT EXISTS myuser(user VARCHAR, password VARCHAR);");`
+   This means that the application creates the database "ids2" with the table "myuser", where the user's information is stored
+   $ adb shell
+   # cd /data/data/jakhar.aseem.diva/databases/
+   # sqlite3 ids2
+   # .tables
+   # select * from myuser;
+   
+## 5. Insecure Data Storage - Part 3
+Solution:
+   In the file jakhar.aseem.diva.InsecureDataStorage3Activity:
+    `File uinfo = File.createTempFile("uinfo", "tmp", new File(getApplicationInfo().dataDir));
+     uinfo.setReadable(true);
+     uinfo.setWritable(true);
+     FileWriter fw = new FileWriter(uinfo);
+     fw.write(usr.getText().toString() + ":" + pwd.getText().toString() + "\n");
+     fw.close();`
+   The application creates a tmp file in the application's data directory with the user's data
+   $ adb shell
+   # cd /data/data/jakhar.aseem.diva/
+   # cat uinfo...tmp
+
+## 6. Insecure Data Storage - Part 4
+Solution:
+   In the file jakhar.aseem.diva.InsecureDataStorage4Activity:
+   `File uinfo = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/.uinfo.txt");`
+   The application is using external storage
+   $ adb shell
+   # echo $EXTERNAL_STORAGE
+   # cd $EXTERNAL_STORAGE
+   # cat .uinfo.txt
+ 
+## 7. Input Validation Issues - Part 1 (SQLi)
+ Solution:
+   User input is not properly filtered
+   Enter: "'or 1=1-- "
+   
+## 8. Input Validation Issues - Part 2 (vulnerable Web View)
+ Solution:
+   User input is used in the WebView.loadUrl() function without proper sanitization
+   This means that the user can pass any url to the application
+   Enter: file:///data/data/jakhar.aseem.diva/private_file_name
+
+## 9. Access Control Issues - Part 1 (Exported Activity)
+ Solution:
+   the APICredsActivity is exported.
+   $ adb shell am start -n jakhar.aseem.diva/.APICredsActivity
+
+## 10. Access Control Issues - Part 2 (Exported Activity)
+ Solution:
+  the API2CredsActivity is exported.
+  adb shell am start -n jakhar.aseem.diva/.APICreds2Activity --ez check_pin false // requires boolean extra check_pin
+  
+## 11. Access Control Issues - Part 3 (Exported Content Provider)
+ Solution:
+  the content provider "NotesProvider" is exported;
+  CONTENT_URI = "content://jakhar.aseem.diva.provider.notesprovider/notes"
+  $ adb shell content  query --uri content://jakhar.aseem.diva.provider.notesprovider/notes
+  
+## 12. Hardcoding Issues - Part 2
+ Solution:
+  The application uses the native library "libdivajni.so" in this challenge
+  You can solve using strings or reversing the library
+  Reversing:
+   Go to: Java_jakhar_aseem_diva_DivaJni_access
+   You will see the string "olsdfgad;lh" being loaded
+   Enter: "olsdfgad;lh"
+ 
+ ## 13. Input Validation Issues - Part 3
+  Solution:
+   Enter +50 A and crash the app
+   
