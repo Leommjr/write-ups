@@ -83,7 +83,8 @@
 
 ## Prototype Pollution Prevention
    '''
-   if (key != '__proto__' && key != 'constructor' && key != 'prototype')
+   if (key != '__proto__' && key != 'constructor' && key != 'prototype' && !Array.isArray(obj[key]))
+   Object.freeze (Object.prototype)
    '''
    
 ## Cookies
