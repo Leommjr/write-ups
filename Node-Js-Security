@@ -1,0 +1,99 @@
+## Security HTTP Headers
+    Helmet module
+    '''
+    var express = require('express');
+    var helmet = require('helmet');
+ 
+    var app = express();
+    app.use(helmet());
+    app.use(helmet.hsts()); // default configuration
+    app.use(helmet.xframe()); // default behavior (DENY)
+    app.use(helmet.noSniff());
+    app.disable('x-powered-by') or app.use(helmet.hidePoweredBy({
+                                           setTo: "PHP 4.2.0"
+                                           }));
+    
+    '''
+    Content Security Policy
+    '''
+    const csp = require('helmet-csp')
+    app.use(csp({
+      directives: {
+         defaultSrc: ["'self'"],  // default value for all directives that are absent
+         scriptSrc: ["'self'"],   // helps prevent XSS attacks
+         frameAncestors: ["'none'"],  // helps prevent Clickjacking attacks
+         imgSrc: ["'self'", "'http://imgexample.com'"],
+         styleSrc: ["'none'"]
+      }
+    }))
+    '''
+    
+## Input/Output Validation
+    node-esapi
+    '''
+    var ESAPI = require('node-esapi');
+    ESAPI.encoder().encodeForHTML('<p>This is a test</p>');
+    '''
+    DOMPurify
+    '''
+    let clean = DOMPurify.sanitize( dirty );
+    '''
+    safesql (SQLi Prevention)
+    '''
+    const { mysql, SqlId } = require('safesql');
+    const table = 'table';
+    const ids = [ 'x', 'y', 'z' ];
+    const str = 'foo\'"bar';
+    const query = mysql`SELECT * FROM \`${ table }\` WHERE id IN (${ ids }) AND s=${ str }`;
+ 
+    console.log(query);
+    '''
+    
+## CSRF Prevention
+    csurf 
+    '''
+    const csrf = require('csurf');
+    csrfProtection = csrf({ cookie: true });
+    app.get('/form', csrfProtection, function(req, res) {
+    res.render('send', { csrfToken: req.csrfToken() })
+    })
+     app.post('/process', parseForm, csrfProtection, function(req, res) {
+    res.send('data is being processed');
+    });
+    '''
+    
+## HTTP Parameter Pollution Prevention
+    hpp
+    '''
+    const hpp = require('hpp');
+    app.use(hpp());
+    '''
+    
+## Prototype Poisoning Protection
+    secure-json-parse
+    '''
+    const sjson = require('secure-json-parse')
+
+    const goodJson = '{ "a": 5, "b": 6 }'
+    const badJson = '{ "a": 5, "b": 6, "__proto__": { "x": 7 }, "constructor": {"prototype": {"bar": "baz"} } }'
+
+    console.log(JSON.parse(goodJson), sjson.parse(goodJson, { protoAction: 'remove', constructorAction: 'remove' }))
+    console.log(JSON.parse(badJson), sjson.parse(badJson, { protoAction: 'remove', constructorAction: 'remove' }))
+    '''
+
+## Prototype Pollution Prevention
+   '''
+   if (key != '__proto__' && key != 'constructor' && key != 'prototype')
+   '''
+   
+## Cookies
+    Set cookie flags
+    '''
+    const session = require('express-session');
+    app.use(session({
+    secret: 'your-secret-key',
+    key: 'cookieName',
+    cookie: { secure: true, httpOnly: true, path: '/user', sameSite: true}
+    }));
+    '''
+    
