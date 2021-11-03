@@ -98,3 +98,13 @@
     }));
     '''
     
+## Hardcoded Credentials
+    npm install dotenv
+    import 'dotenv/config';
+    create file .env:
+        DB_CONNECTION=db-connection-uri://<user>:<password>@databaseserver.com/?database
+    in code:
+        connect(process.env.DB_CONNECTION);
+        
+    
+    
